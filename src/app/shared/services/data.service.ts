@@ -1,9 +1,11 @@
+import { isNgTemplate } from '@angular/compiler';
 import { Injectable } from '@angular/core';
 import { EpisodesComponent } from '@app/components/pages/episodes/episodes.component';
 import { Apollo, gql } from 'apollo-angular';
 import { BehaviorSubject } from 'rxjs';
 import { take, tap } from 'rxjs/operators';
 import { Character, DataResponse, Episode } from '../interfaces/data.interface';
+import { LocalStorageService } from './localStorage.service';
 
 const QUERY = gql`{
   episodes {
@@ -39,12 +41,11 @@ export class DataService {
   private characterSubject = new BehaviorSubject<Character[]>(null);
   public character$ = this.characterSubject.asObservable();
 
-  constructor(private apollo: Apollo) {
+  constructor(private apollo: Apollo, private localStorage: LocalStorageService) {
     this.getDataAPI();
   }
 
   private getDataAPI(): void {
-    console.log('getDataAPI');
     this.apollo.watchQuery<DataResponse>(
         {
           query:  QUERY
@@ -53,11 +54,18 @@ export class DataService {
         take(1),
         tap(({data}) => {
           const {episodes, characters} = data;
-          console.log(episodes);
-          console.log(characters);
           this.episodeSubject.next(episodes.results);
-          this.characterSubject.next(characters.results);
+          this.parseCharactersData(characters.results);
         })
       ).subscribe();
+  }
+
+  private parseCharactersData(characters: Character[]): void {
+    const currentsFav = this.localStorage.getFavoriteCharacters();
+    const newData = characters.map(character => {
+      const found = !!currentsFav.find((fav: Character) => fav.id === character.id);
+      return {...character, isFavorite: found};
+    });
+    this.characterSubject.next(newData);
   }
 }
