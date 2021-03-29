@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { BehaviorSubject } from "rxjs";
 import { Character } from "@shared/interfaces/data.interface";
+import { ToastrService } from "ngx-toastr";
 
 const MY_FAVORITES = 'myFavorites';
 
@@ -12,7 +13,7 @@ export class LocalStorageService {
     private charactersFavSubject = new BehaviorSubject<Character[]>(null);
     public charactersFav$ = this.charactersFavSubject.asObservable();
 
-    constructor() {
+    constructor(private toastrService: ToastrService) {
         this.initialStorage();
         this.getFavoriteCharacters();
     }
@@ -30,10 +31,11 @@ export class LocalStorageService {
             const currentsFav = this.getFavoriteCharacters();
             const characters = currentsFav.filter(item => item.id !== id);
             localStorage.setItem(MY_FAVORITES, JSON.stringify([...characters]));
-            this.charactersFavSubject.next([...characters]); 
+            this.charactersFavSubject.next([...characters]);
+            this.toastrService.warning(`Removed from favorites`, 'Rick&MortyApp');
         } catch (error) {
             console.log('Error removing favorites from local storage', error);
-            alert('Error removing from local storage');
+            this.toastrService.error(`Error removing favorites from local storage ${error}`, 'Rick&MortyApp');
         }
     }
 
@@ -42,9 +44,10 @@ export class LocalStorageService {
             const currentsFav = this.getFavoriteCharacters();
             localStorage.setItem(MY_FAVORITES, JSON.stringify([...currentsFav, character]));
             this.charactersFavSubject.next([...currentsFav, character]);
+            this.toastrService.success(`${character.name} added to favorites`, 'Rick&MortyApp');
         } catch (error) {
             console.log('Error saving favorites to local storage', error);
-            alert('Error saving in local storage');
+            this.toastrService.error(`Error saving favorites to local storage ${error}`, 'Rick&MortyApp');
         }
     }
 
