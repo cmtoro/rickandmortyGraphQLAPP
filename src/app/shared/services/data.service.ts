@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { EpisodesComponent } from '@app/components/pages/episodes/episodes.component';
 import { Apollo, gql } from 'apollo-angular';
 import { BehaviorSubject } from 'rxjs';
-import { take, tap } from 'rxjs/operators';
+import { pluck, take, tap, withLatestFrom } from 'rxjs/operators';
 import { Character, DataResponse, Episode } from '../interfaces/data.interface';
 import { LocalStorageService } from './localStorage.service';
 
@@ -67,5 +67,32 @@ export class DataService {
       return {...character, isFavorite: found};
     });
     this.characterSubject.next(newData);
+  }
+
+  public getCharactersByPage(pageNum: number): any {
+    const QUERY_BY_PAGE = gql`{
+      characters(page: ${pageNum}) {
+        results {
+          id,
+          name,
+          status,
+          species,
+          type,
+          gender,
+          image,
+          created
+        }
+      }
+    }`;
+    this.apollo.watchQuery<any>({
+      query: QUERY_BY_PAGE,
+    }).valueChanges.pipe(
+      take(1),
+      pluck('data', 'characters'),
+      withLatestFrom(this.character$),
+      tap(([apiResponse, characters])=>{
+        this.parseCharactersData([...characters, ...apiResponse.results]);
+      })
+    ).subscribe();
   }
 }
