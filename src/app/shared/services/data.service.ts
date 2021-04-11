@@ -1,6 +1,4 @@
-import { isNgTemplate } from '@angular/compiler';
 import { Injectable } from '@angular/core';
-import { EpisodesComponent } from '@app/components/pages/episodes/episodes.component';
 import { Apollo, gql } from 'apollo-angular';
 import { BehaviorSubject } from 'rxjs';
 import { pluck, take, tap, withLatestFrom } from 'rxjs/operators';
